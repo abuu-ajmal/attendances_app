@@ -2,10 +2,7 @@ class ApiConfig {
   ApiConfig._();
 
   static const String baseUrl =
-      'http://192.168.20.4:8000/api';
-
-
-
+      'http://10.10.89.150:8000/api';
 
   static const String login =
       '$baseUrl/auth/login';
@@ -27,4 +24,10 @@ class ApiConfig {
 
   static const String myAttendance =
       '$baseUrl/attendance/my';
+
+  static String get myAttendanceWarning =>
+      '$baseUrl/attendance/my/warning';
+
+  static String get myAttendanceWarningLetter =>
+      '$baseUrl/attendance/my/warning-letter';
 }

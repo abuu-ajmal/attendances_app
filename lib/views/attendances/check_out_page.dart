@@ -1,5 +1,6 @@
 
 import 'dart:io';
+import '../../services/device_service.dart';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -164,59 +165,79 @@ _gettingPhoto = false;
 // SUBMIT CHECK OUT
 // ============================================================
 
-Future<void> _submit() async {
-if (_photo == null) {
-_showMessage(
-'Please take your checkout photo.',
-isError: true,
-);
+  Future<void> _submit() async {
+    if (_photo == null) {
+      _showMessage(
+        'Please take your checkout photo.',
+        isError: true,
+      );
 
-return;
-}
+      return;
+    }
 
-if (_position == null) {
-_showMessage(
-'Please capture your current location.',
-isError: true,
-);
+    if (_position == null) {
+      _showMessage(
+        'Please capture your current location.',
+        isError: true,
+      );
 
-return;
-}
+      return;
+    }
 
-/*
-     * IMPORTANT:
-     * Replace this with the same device ID
-     * that you already use in Check In.
-     */
-const String deviceId = 'flutter-device';
+    final String uuid =
+    const Uuid().v4();
 
-final String uuid =
-const Uuid().v4();
+    final deviceId =
+    await DeviceService.instance
+        .getDeviceName();
 
-final DateTime now =
-DateTime.now();
+    final DateTime now =
+    DateTime.now();
 
-final viewModel =
-context.read<CheckOutViewModel>();
+    final viewModel =
+    context.read<CheckOutViewModel>();
 
-final success =
-await viewModel.submitCheckOut(
-occurredAt: now,
-latitude: _position!.latitude,
-longitude: _position!.longitude,
-accuracy: _position!.accuracy,
-deviceId: deviceId,
-uuid: uuid,
-photo: _photo,
-remarks: _remarksController.text,
-);
+    final success =
+    await viewModel.submitCheckOut(
+      occurredAt: now,
+      latitude: _position!.latitude,
+      longitude: _position!.longitude,
+      accuracy: _position!.accuracy,
+      deviceId: deviceId,
+      uuid: uuid,
+      photo: _photo,
+      remarks:
+      _remarksController.text.trim(),
+    );
 
-if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
 
-if (success) {
-_showSuccessDialog();
-}
-}
+    if (!success) {
+      _showMessage(
+        viewModel.errorMessage ??
+            'Failed to check out.',
+        isError: true,
+      );
+
+      return;
+    }
+
+    final isPending =
+        viewModel.attendance?.syncStatus ==
+            'pending';
+
+    if (isPending) {
+      _showMessage(
+        'Check out saved offline. It will be synchronized automatically when internet is available.',
+      );
+    }
+
+    _showSuccessDialog(
+      offline: isPending,
+    );
+  }
 
 // ============================================================
 // MESSAGE
@@ -241,52 +262,62 @@ isError
 // SUCCESS
 // ============================================================
 
-void _showSuccessDialog() {
-showDialog(
-context: context,
-barrierDismissible: false,
-builder: (dialogContext) {
-return AlertDialog(
-shape: RoundedRectangleBorder(
-borderRadius:
-BorderRadius.circular(20),
-),
-icon: const Icon(
-Icons.check_circle,
-color: Colors.green,
-size: 64,
-),
-title: const Text(
-'Check Out Successful',
-textAlign: TextAlign.center,
-),
-content: const Text(
-'Your check out has been recorded successfully.',
-textAlign: TextAlign.center,
-),
-actions: [
-SizedBox(
-width: double.infinity,
-child: ElevatedButton(
-onPressed: () {
-Navigator.of(
-dialogContext,
-).pop();
+  void _showSuccessDialog({
+    bool offline = false,
+  }) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius:
+            BorderRadius.circular(20),
+          ),
+          icon: Icon(
+            offline
+                ? Icons.cloud_off
+                : Icons.check_circle,
+            color: offline
+                ? Colors.orange
+                : Colors.green,
+            size: 64,
+          ),
+          title: Text(
+            offline
+                ? 'Saved Offline'
+                : 'Check Out Successful',
+            textAlign: TextAlign.center,
+          ),
+          content: Text(
+            offline
+                ? 'Your check out has been saved on this device. It will be synchronized automatically when internet connection is available.'
+                : 'Your check out has been recorded successfully.',
+            textAlign: TextAlign.center,
+          ),
+          actions: [
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.of(
+                    dialogContext,
+                  ).pop();
 
-Navigator.of(
-context,
-).pop();
-},
-child: const Text(
-'Done',
-),
-),
-),
-],
-);
-},
-);
-}
+                  Navigator.of(
+                    context,
+                  ).pop();
+                },
+                child: const Text(
+                  'Done',
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
 // ============================================================
 // BUILD

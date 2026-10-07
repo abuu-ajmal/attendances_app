@@ -1491,32 +1491,27 @@ return '$day/$month/$year';
 // FORMAT TIME
 // =====================================================
 
-String _formatTime(
-DateTime? dateTime,
-) {
-if (dateTime == null) {
-return '--:--';
-}
+  String _formatTime(DateTime? dateTime) {
+    if (dateTime == null) {
+      return '--:--';
+    }
 
-final hour =
-dateTime.hour == 0
-? 12
-    : dateTime.hour > 12
-? dateTime.hour - 12
-    : dateTime.hour;
+    final hour24 = dateTime.hour;
 
-final minute =
-dateTime.minute
-    .toString()
-    .padLeft(2, '0');
+    final hour = hour24 == 0
+        ? 12
+        : hour24 > 12
+        ? hour24 - 12
+        : hour24;
 
-final period =
-dateTime.hour >= 12
-? 'PM'
-    : 'AM';
+    final minute = dateTime.minute
+        .toString()
+        .padLeft(2, '0');
 
-return '$hour:$minute $period';
-}
+    final period = hour24 >= 12 ? 'PM' : 'AM';
+
+    return '$hour:$minute $period';
+  }
 
 // =====================================================
 // SYNC STATUS COLOR
